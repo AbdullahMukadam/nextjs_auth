@@ -62,7 +62,7 @@ export async function SignUpAction(data) {
                 email: newUser.email,
                 id: newUser._id.toString()
             }
-        }; 
+        };
 
     } catch (error) {
         console.error('SignUp Error:', error);
@@ -129,6 +129,24 @@ export async function SignInAction(data) {
         return {
             success: false,
             message: "Internal Server Error"
+        }
+    }
+}
+
+export async function SignOutAction() {
+    try {
+        const cookieStore = await cookies();
+        const response = cookieStore.set("jwt", "")
+        if (response) {
+            return {
+                success: true,
+                message: "Logout Succesfully"
+            }
+        }
+    } catch (error) {
+        return {
+            success: false,
+            message: "Error in Logout"
         }
     }
 }
