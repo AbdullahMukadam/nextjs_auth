@@ -41,7 +41,7 @@ export async function SignUpAction(data) {
         await newUser.save();
 
         const token = jwt.sign(
-            { userId: newUser._id.toString() }, 
+            { userId: newUser._id.toString() },
             process.env.JWT_SECRET,
             { expiresIn: "30d" }
         );
@@ -60,9 +60,9 @@ export async function SignUpAction(data) {
             user: {
                 name: newUser.name,
                 email: newUser.email,
-                id: newUser._id.toString() 
+                id: newUser._id.toString()
             }
-        };
+        }; 
 
     } catch (error) {
         console.error('SignUp Error:', error);
@@ -70,5 +70,65 @@ export async function SignUpAction(data) {
             success: false,
             message: "Internal Server Error"
         };
+    }
+}
+
+export async function SignInAction(data) {
+    try {
+        await ConnectToDb();
+
+        const { email, password } = data
+
+        if (!email || !password) {
+            return {
+                success: false,
+                message: "Data Not received"
+            }
+        }
+
+        const EmailExits = await User.findOne({ email })
+        if (!EmailExits) {
+            return {
+                success: false,
+                message: "User Not Found"
+            }
+        } else {
+            const comparePassword = await bcrypt.compare(password, EmailExits.password)
+            if (comparePassword) {
+                const token = jwt.sign(
+                    { userId: EmailExits._id.toString() },
+                    process.env.JWT_SECRET,
+                    { expiresIn: "30d" }
+                );
+                if (token) {
+                    const cookieStore = await cookies();
+                    cookieStore.set("jwt", token, {
+                        httpOnly: true,
+                        secure: process.env.NODE_ENV === 'production',
+                        sameSite: 'strict',
+                        maxAge: 30 * 24 * 60 * 60
+                    });
+
+                    return {
+                        success: true,
+                        message: "Succesfully Signed Up",
+                        user: {
+                            name: EmailExits.name,
+                            email: EmailExits.email,
+                            id: EmailExits._id.toString()
+                        }
+                    };
+                }
+            }
+        }
+
+
+
+
+    } catch (error) {
+        return {
+            success: false,
+            message: "Internal Server Error"
+        }
     }
 }
